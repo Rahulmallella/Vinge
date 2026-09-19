@@ -1,0 +1,20 @@
+# Mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+
+# Python
+__pycache__/
+*.py[cod]
+backend/.venv/
+.venv/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
