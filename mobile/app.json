@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Vinge",
+    "slug": "vinge",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "vinge",
+    "userInterfaceStyle": "automatic",
+    "ios": {"supportsTablet": false},
+    "android": {"adaptiveIcon": {"backgroundColor": "#ffffff"}}
+  }
+}
