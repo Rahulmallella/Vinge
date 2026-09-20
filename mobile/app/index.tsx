@@ -9,7 +9,7 @@ export default function DiscoverScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>Vinge</Text>
 
-        <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
+        <Link href="/filters" asChild>\n          <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
           <Ionicons name="options-outline" size={22} color="#111" />
           <Text style={styles.filterText}>Filters</Text>
         </TouchableOpacity>
