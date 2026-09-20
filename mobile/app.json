@@ -6,7 +6,21 @@
     "orientation": "portrait",
     "scheme": "vinge",
     "userInterfaceStyle": "automatic",
-    "ios": {"supportsTablet": false},
-    "android": {"adaptiveIcon": {"backgroundColor": "#ffffff"}}
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Vinge uses your location to find people within your selected dating distance."
+        }
+      ]
+    ]
   }
 }
