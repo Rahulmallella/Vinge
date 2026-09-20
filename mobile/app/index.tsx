@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DiscoverScreen() {
@@ -12,7 +12,7 @@ export default function DiscoverScreen() {
         <TouchableOpacity
           style={styles.filterButton}
           activeOpacity={0.7}
-          onPress={() => router.push("/filters")}
+          onPress={() => {\n            Alert.alert("Filter tap detected", "Opening filters now.");\n            router.push("/filters");\n          }}
         >
           <Ionicons name="options-outline" size={22} color="#111" />
           <Text style={styles.filterText}>Filters</Text>
