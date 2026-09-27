@@ -1,4 +1,5 @@
 import Slider from "@react-native-community/slider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
@@ -8,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const MIN_DISTANCE = 1;
 const MAX_DISTANCE = 300;
+const FILTERS_STORAGE_KEY = "vinge_filters";
 
 type FilterKey = "gender" | "smoking" | "drinking";
 
@@ -26,7 +28,26 @@ export default function FiltersScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
 
   useEffect(() => {
-    Location.getForegroundPermissionsAsync().then(({ status }) => setLocationAllowed(status === "granted"));
+    const loadFilters = async () => {
+      const [{ status }, saved] = await Promise.all([
+        Location.getForegroundPermissionsAsync(),
+        AsyncStorage.getItem(FILTERS_STORAGE_KEY)
+      ]);
+
+      setLocationAllowed(status === "granted");
+
+      if (saved) {
+        const filters = JSON.parse(saved);
+        if (typeof filters.distance === "number") setDistance(filters.distance);
+        if (typeof filters.gender === "string") setGender(filters.gender);
+        if (typeof filters.smoking === "string") setSmoking(filters.smoking);
+        if (typeof filters.drinking === "string") setDrinking(filters.drinking);
+      }
+    };
+
+    loadFilters().catch(() => {
+      Alert.alert("Unable to load filters", "Please try again.");
+    });
   }, []);
 
   const enableLocation = async () => {
@@ -56,6 +77,10 @@ export default function FiltersScreen() {
       await enableLocation();
       return;
     }
+    await AsyncStorage.setItem(
+      FILTERS_STORAGE_KEY,
+      JSON.stringify({ distance, gender, smoking, drinking })
+    );
     router.back();
   };
 
