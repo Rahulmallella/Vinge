@@ -3,15 +3,27 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MIN_DISTANCE = 1;
 const MAX_DISTANCE = 300;
 
+type FilterKey = "gender" | "smoking" | "drinking";
+
+const filterOptions: Record<FilterKey, string[]> = {
+  gender: ["Male", "Female", "Non-binary", "Everyone"],
+  smoking: ["Never", "Sometimes", "Regularly", "No preference"],
+  drinking: ["Never", "Socially", "Often", "No preference"]
+};
+
 export default function FiltersScreen() {
   const [distance, setDistance] = useState(25);
   const [locationAllowed, setLocationAllowed] = useState(false);
+  const [gender, setGender] = useState("Everyone");
+  const [smoking, setSmoking] = useState("No preference");
+  const [drinking, setDrinking] = useState("No preference");
+  const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
 
   useEffect(() => {
     Location.getForegroundPermissionsAsync().then(({ status }) => setLocationAllowed(status === "granted"));
@@ -26,6 +38,19 @@ export default function FiltersScreen() {
     }
   };
 
+  const selectedValue = (key: FilterKey) => {
+    if (key === "gender") return gender;
+    if (key === "smoking") return smoking;
+    return drinking;
+  };
+
+  const selectOption = (key: FilterKey, value: string) => {
+    if (key === "gender") setGender(value);
+    if (key === "smoking") setSmoking(value);
+    if (key === "drinking") setDrinking(value);
+    setActiveFilter(null);
+  };
+
   const saveFilters = async () => {
     if (!locationAllowed) {
       await enableLocation();
@@ -33,6 +58,16 @@ export default function FiltersScreen() {
     }
     router.back();
   };
+
+  const preferenceRow = (label: string, key: FilterKey) => (
+    <TouchableOpacity style={styles.preferenceRow} onPress={() => setActiveFilter(key)} activeOpacity={0.7}>
+      <Text style={styles.preferenceLabel}>{label}</Text>
+      <View style={styles.preferenceValueGroup}>
+        <Text style={styles.preferenceValue}>{selectedValue(key)}</Text>
+        <Ionicons name="chevron-down" size={18} color="#777" />
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,59 +79,84 @@ export default function FiltersScreen() {
         <View style={styles.iconButton} />
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.row}>
-          <View style={styles.labelGroup}>
-            <Text style={styles.sectionTitle}>Distance</Text>
-            <Text style={styles.required}>Location required</Text>
-          </View>
-          <Text style={styles.distanceValue}>{distance} mi</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.preferences}>
+          {preferenceRow("Gender", "gender")}
+          {preferenceRow("Smoking", "smoking")}
+          {preferenceRow("Drinking", "drinking")}
         </View>
 
-        <Text style={styles.description}>
-          Choose how far away your potential matches can be. You can search up to 300 miles.
-        </Text>
-
-        {!locationAllowed && (
-          <TouchableOpacity style={styles.locationButton} onPress={enableLocation}>
-            <Ionicons name="location-outline" size={21} color="#111" />
-            <Text style={styles.locationText}>Allow location</Text>
-          </TouchableOpacity>
-        )}
-
-        {locationAllowed && (
-          <View style={styles.locationReady}>
-            <Ionicons name="checkmark-circle" size={20} color="#111" />
-            <Text style={styles.locationReadyText}>Location enabled</Text>
+        <View style={styles.distanceSection}>
+          <View style={styles.row}>
+            <View style={styles.labelGroup}>
+              <Text style={styles.sectionTitle}>Distance</Text>
+              <Text style={styles.required}>Location required</Text>
+            </View>
+            <Text style={styles.distanceValue}>{distance} mi</Text>
           </View>
-        )}
 
-        <Slider
-          style={styles.slider}
-          minimumValue={MIN_DISTANCE}
-          maximumValue={MAX_DISTANCE}
-          step={1}
-          value={distance}
-          onValueChange={setDistance}
-          disabled={!locationAllowed}
-          minimumTrackTintColor="#111"
-          maximumTrackTintColor="#d8d8d8"
-          thumbTintColor="#111"
-        />
+          <Text style={styles.description}>
+            Choose how far away your potential matches can be. You can search up to 300 miles.
+          </Text>
 
-        <View style={styles.rangeLabels}>
-          <Text style={styles.rangeText}>1 mi</Text>
-          <Text style={styles.rangeText}>300 mi</Text>
+          {!locationAllowed ? (
+            <TouchableOpacity style={styles.locationButton} onPress={enableLocation}>
+              <Ionicons name="location-outline" size={21} color="#111" />
+              <Text style={styles.locationText}>Allow location</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.locationReady}>
+              <Ionicons name="checkmark-circle" size={20} color="#111" />
+              <Text style={styles.locationReadyText}>Location enabled</Text>
+            </View>
+          )}
+
+          <Slider
+            style={styles.slider}
+            minimumValue={MIN_DISTANCE}
+            maximumValue={MAX_DISTANCE}
+            step={1}
+            value={distance}
+            onValueChange={setDistance}
+            disabled={!locationAllowed}
+            minimumTrackTintColor="#111"
+            maximumTrackTintColor="#d8d8d8"
+            thumbTintColor="#111"
+          />
+
+          <View style={styles.rangeLabels}>
+            <Text style={styles.rangeText}>1 mi</Text>
+            <Text style={styles.rangeText}>300 mi</Text>
+          </View>
         </View>
-
-        <Text style={styles.helper}>
-          {locationAllowed ? "Drag the bar to set your matching radius." : "Allow location to choose your matching radius."}
-        </Text>
-      </View>
+      </ScrollView>
 
       <TouchableOpacity style={styles.saveButton} onPress={saveFilters}>
         <Text style={styles.saveText}>SAVE FILTERS</Text>
       </TouchableOpacity>
+
+      <Modal visible={activeFilter !== null} transparent animationType="fade" onRequestClose={() => setActiveFilter(null)}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setActiveFilter(null)}>
+          <View style={styles.dropdown}>
+            <Text style={styles.dropdownTitle}>
+              {activeFilter ? activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1) : ""}
+            </Text>
+            {activeFilter &&
+              filterOptions[activeFilter].map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.option}
+                  onPress={() => selectOption(activeFilter, option)}
+                >
+                  <Text style={styles.optionText}>{option}</Text>
+                  {selectedValue(activeFilter) === option && (
+                    <Ionicons name="checkmark" size={20} color="#111" />
+                  )}
+                </TouchableOpacity>
+              ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -106,7 +166,13 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#eee" },
   iconButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 20, fontWeight: "800" },
-  content: { flex: 1, padding: 24 },
+  content: { padding: 24, paddingBottom: 20 },
+  preferences: { borderTopWidth: 1, borderTopColor: "#eee" },
+  preferenceRow: { minHeight: 64, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#eee" },
+  preferenceLabel: { fontSize: 17, fontWeight: "700" },
+  preferenceValueGroup: { flexDirection: "row", alignItems: "center", gap: 7 },
+  preferenceValue: { fontSize: 16, color: "#555" },
+  distanceSection: { marginTop: 34 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   labelGroup: { gap: 5 },
   sectionTitle: { fontSize: 24, fontWeight: "800" },
@@ -120,7 +186,11 @@ const styles = StyleSheet.create({
   slider: { width: "100%", height: 48, marginTop: 26 },
   rangeLabels: { flexDirection: "row", justifyContent: "space-between" },
   rangeText: { fontSize: 13, color: "#777" },
-  helper: { marginTop: 16, fontSize: 14, color: "#777" },
-  saveButton: { margin: 24, backgroundColor: "#111", borderRadius: 16, padding: 18, alignItems: "center" },
-  saveText: { color: "#fff", fontSize: 16, fontWeight: "800" }
+  saveButton: { marginHorizontal: 24, marginTop: 8, marginBottom: 24, backgroundColor: "#111", borderRadius: 16, padding: 18, alignItems: "center" },
+  saveText: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "center", padding: 28 },
+  dropdown: { backgroundColor: "#fff", borderRadius: 18, padding: 18 },
+  dropdownTitle: { fontSize: 20, fontWeight: "800", marginBottom: 8 },
+  option: { minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#eee" },
+  optionText: { fontSize: 16 }
 });
